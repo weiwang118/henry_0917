@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>三十岁 · 十二件没干过的事</title>
+<meta name="theme-color" content="#FF6B4A">
+<style>
+  :root{
+    --ink:#2B1C12;
+    --cream:#FFF3DC;
+    --paper:#FFFFFF;
+    --tomato:#FF6B4A;
+    --mustard:#FFD23F;
+    --mint:#1B9E77;
+    --muted:#6B5344;
+    --faint:#9A806B;
+    --round:"Yuanti SC","Hiragino Sans GB","PingFang SC","HarmonyOS Sans SC",
+            "Microsoft YaHei",-apple-system,BlinkMacSystemFont,sans-serif;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    --bd:3px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    background:var(--cream); color:var(--ink); font-family:var(--round);
+    line-height:1.7; padding:0 16px 76px; overflow-x:hidden;
+    background-image:repeating-linear-gradient(135deg,
+      rgba(255,107,74,.05) 0 13px, transparent 13px 26px);
+  }
+  .wrap{max-width:640px;margin:0 auto}
+  ::selection{background:var(--mustard);color:var(--ink)}
+  button{font-family:inherit}
+
+  /* ─────── 主票 ─────── */
+  .hero{
+    position:relative; margin:26px 0 0; background:var(--tomato); color:#FFF3DC;
+    border:var(--bd) solid var(--ink); border-radius:22px;
+    box-shadow:8px 8px 0 var(--ink);
+  }
+  .hero-top{padding:34px 22px 28px; text-align:center}
+  .ribbon{
+    display:inline-block; font-size:11.5px; font-weight:800; letter-spacing:.18em;
+    background:var(--mustard); color:var(--ink); padding:6px 16px;
+    border:2px solid var(--ink); border-radius:22px; margin-bottom:20px;
+    transform:rotate(-1.4deg);
+  }
+  h1{
+    font-size:clamp(35px,10.2vw,56px); font-weight:900; line-height:1.15;
+    letter-spacing:.005em; text-shadow:3px 3px 0 var(--ink);
+  }
+  h1 em{font-style:normal; color:var(--mustard)}
+  .lede{
+    margin:22px auto 0; max-width:23em; font-size:13.5px; line-height:2.05;
+    text-align:left; color:#FFE4D2;
+  }
+  .lede .kick{color:var(--mustard); font-weight:800; font-size:15px}
+  .lede p+p{margin-top:4px}
+
+  .perf{position:relative; height:0; border-top:2px dashed rgba(255,243,220,.5)}
+  .perf i{
+    position:absolute; top:-12px; width:24px; height:24px; border-radius:50%;
+    background:var(--cream); border:var(--bd) solid var(--ink);
+  }
+  .perf i.l{left:-15px} .perf i.r{right:-15px}
+
+  .hero-bot{display:grid; grid-template-columns:1fr 1fr; gap:0}
+  .hero-bot > div{padding:20px 8px; text-align:center}
+  .hero-bot > div:first-child{border-right:2px dashed rgba(255,243,220,.4)}
+  .hero-bot .n{font-size:34px; font-weight:900; line-height:1; color:var(--mustard)}
+  .hero-bot .n small{font-size:14px; opacity:.72; margin-left:2px}
+  .hero-bot .k{font-size:11px; font-weight:700; letter-spacing:.16em; margin-top:8px; color:#FFD0BC}
+  #daysLeft.hot{color:#fff}
+
+  .dates{text-align:center; font-family:var(--mono); font-size:11px;
+    color:var(--faint); letter-spacing:.08em; margin-top:15px}
+
+  /* 进度 */
+  .pips{display:flex; gap:4px; margin:20px 0 9px}
+  .pip{flex:1; height:9px; border:2px solid var(--ink); border-radius:5px;
+    background:var(--paper); transition:background .3s ease}
+  .pip.on{background:var(--c)}
+  .pip.dead{background:repeating-linear-gradient(45deg,#DCD0BC 0 3px,transparent 3px 6px); opacity:.55}
+  .pace{text-align:center; font-size:12.5px; color:var(--muted); letter-spacing:.03em}
+  .pace b{font-weight:900; color:var(--tomato); font-size:15px}
+
+  /* ─────── 说明 ─────── */
+  .notes{
+    margin:32px 0 0; padding:22px 22px 20px; background:var(--paper);
+    border:var(--bd) solid var(--ink); border-radius:18px; box-shadow:5px 5px 0 var(--mint);
+  }
+  .notes h2{font-size:12.5px; font-weight:900; letter-spacing:.2em; color:var(--faint); margin-bottom:14px}
+  .notes li{list-style:none; font-size:13.5px; color:var(--muted); line-height:1.85;
+    padding-left:23px; position:relative}
+  .notes li+li{margin-top:8px}
+  .notes li::before{content:""; position:absolute; left:0; top:.6em; width:11px; height:11px;
+    border:2px solid var(--ink); border-radius:3px; background:var(--mustard)}
+  .notes li:nth-child(2)::before{background:var(--tomato)}
+  .notes li:nth-child(3)::before{background:var(--mint)}
+  .notes li:nth-child(4)::before{background:#8B5CD6}
+
+  .divider{display:flex; align-items:center; gap:12px; margin:42px 0 20px}
+  .divider span{font-size:12px; font-weight:900; letter-spacing:.24em; color:var(--faint); white-space:nowrap}
+  .divider::before,.divider::after{content:""; height:3px; background:var(--ink); flex:1; border-radius:2px}
+
+  /* ─────── 票 ─────── */
+  .tk{
+    position:relative; margin-bottom:17px; background:var(--paper);
+    border:var(--bd) solid var(--ink); border-radius:18px;
+    box-shadow:5px 5px 0 var(--c); overflow:hidden;
+    transition:box-shadow .25s ease, opacity .25s ease;
+  }
+  .tk-main{padding:20px 21px 20px 30px; position:relative}
+  .tk-main::before{ /* 打孔边 */
+    content:""; position:absolute; left:11px; top:16px; bottom:16px; width:4px;
+    background:radial-gradient(circle,var(--ink) 1.7px,transparent 1.9px) 0 0/4px 12px repeat-y;
+    opacity:.42;
+  }
+  .tk-head{display:flex; align-items:center; gap:9px; flex-wrap:wrap; margin-bottom:9px}
+  .tk-no{
+    font-size:11.5px; font-weight:900; letter-spacing:.09em; color:#fff;
+    background:var(--c); padding:3px 11px; border-radius:20px; border:2px solid var(--ink);
+  }
+  .tk-win{
+    margin-left:auto; font-size:11px; font-weight:700; letter-spacing:.05em;
+    color:var(--muted); background:var(--cream); padding:3px 11px;
+    border-radius:20px; border:2px solid var(--ink); white-space:nowrap;
+  }
+  .tk-name{font-size:25px; font-weight:900; letter-spacing:.02em; line-height:1.3}
+  .tk-why{font-size:13.5px; line-height:1.9; color:var(--muted); margin:8px 0 15px}
+
+  .tk-info{
+    font-size:12.5px; line-height:1.95; color:var(--muted);
+    border-top:2px dashed #E3D6C2; padding-top:12px;
+  }
+  .tk-info b{font-weight:900; color:var(--ink); margin-right:6px}
+
+  .tk-acts{display:flex; gap:9px; margin-top:15px; flex-wrap:wrap}
+  .btn{
+    font-size:13px; font-weight:900; letter-spacing:.06em; padding:10px 20px;
+    border-radius:24px; border:var(--bd) solid var(--ink); cursor:pointer;
+    box-shadow:3px 3px 0 var(--ink); transition:transform .14s ease, box-shadow .14s ease;
+  }
+  .btn:active{transform:translate(3px,3px); box-shadow:0 0 0 var(--ink)}
+  .btn:focus-visible{outline:3px solid var(--mint); outline-offset:3px}
+  .btn-qr{background:var(--mustard); color:var(--ink)}
+  .btn-tear{background:var(--c); color:#fff}
+  .btn-ghost{background:var(--paper); color:var(--ink); box-shadow:none; border-width:2px;
+    font-weight:700; padding:9px 16px; font-size:12px}
+
+  /* ─────── 券码抽屉 ─────── */
+  .drawer{
+    display:none; border-top:var(--bd) solid var(--ink);
+    background:var(--cream); padding:22px 20px;
+  }
+  .tk.open .drawer{display:block; animation:slide .28s ease}
+  @keyframes slide{from{opacity:0; transform:translateY(-8px)} to{opacity:1; transform:none}}
+
+  .qr-card{
+    background:#fff; border:var(--bd) solid var(--ink); border-radius:14px;
+    padding:16px; text-align:center; box-shadow:4px 4px 0 var(--ink);
+  }
+  .qr-card img{
+    display:block; width:100%; max-width:230px; height:auto; margin:0 auto;
+    image-rendering:pixelated; border-radius:4px;
+  }
+  .qr-missing{
+    display:flex; align-items:center; justify-content:center; text-align:center;
+    min-height:170px; border:3px dashed #C9B69C; border-radius:10px;
+    font-size:12.5px; line-height:1.9; color:var(--faint); padding:18px;
+    font-family:var(--mono);
+  }
+  .code-row{
+    display:flex; align-items:center; justify-content:center; gap:10px;
+    margin-top:14px; flex-wrap:wrap;
+  }
+  .code{
+    font-family:var(--mono); font-size:19px; font-weight:700; letter-spacing:.08em;
+    background:var(--mustard); border:2px solid var(--ink); border-radius:8px;
+    padding:6px 14px;
+  }
+  .hint{font-size:11.5px; color:var(--faint); margin-top:11px; letter-spacing:.03em}
+
+  .tips{margin-top:18px}
+  .tips h4{
+    font-size:11.5px; font-weight:900; letter-spacing:.18em; color:var(--faint);
+    margin-bottom:10px;
+  }
+  .tips li{
+    list-style:none; font-size:13px; line-height:1.85; color:var(--muted);
+    padding-left:21px; position:relative;
+  }
+  .tips li+li{margin-top:6px}
+  .tips li::before{
+    content:"!"; position:absolute; left:0; top:.28em;
+    width:15px; height:15px; border-radius:50%; background:var(--tomato); color:#fff;
+    font-size:10px; font-weight:900; display:flex; align-items:center; justify-content:center;
+  }
+
+  /* 已撕 */
+  .tk.torn{box-shadow:5px 5px 0 #DCD0BC; opacity:.72}
+  .tk.torn .tk-name{text-decoration:line-through; text-decoration-thickness:3px;
+    text-decoration-color:var(--c)}
+  .tk.torn .tk-why,.tk.torn .tk-info{display:none}
+  .tk.torn .tk-no{background:#BFAE99}
+  .stamp{
+    font-size:14px; font-weight:900; color:var(--c); letter-spacing:.06em;
+    border:3px solid var(--c); border-radius:8px; padding:5px 13px;
+    transform:rotate(-3.5deg); display:inline-block;
+  }
+
+  /* 作废 */
+  .tk.void{box-shadow:5px 5px 0 #D7C9B4; opacity:.62; border-style:dashed}
+  .tk.void .tk-name{text-decoration:line-through; text-decoration-color:var(--faint)}
+  .tk.void .tk-no{background:#B3A08C}
+  .void-note{
+    font-size:13px; line-height:1.9; color:var(--muted); background:var(--cream);
+    border:2px dashed #C9B69C; border-radius:10px; padding:11px 14px; margin-top:4px;
+  }
+
+  /* ─────── 彩头 ─────── */
+  .prize{
+    margin-top:40px; padding:34px 24px; text-align:center; background:var(--paper);
+    border:var(--bd) dashed var(--ink); border-radius:20px;
+    transition:background .4s ease, border-style .4s ease;
+  }
+  .prize h2{font-size:19px; font-weight:900; letter-spacing:.06em; margin-bottom:11px}
+  .prize p{font-size:13.5px; color:var(--muted); line-height:1.95; max-width:23em; margin:0 auto}
+  .prize .st{
+    display:inline-block; margin-top:18px; font-size:12px; font-weight:900;
+    letter-spacing:.14em; background:var(--cream); color:var(--faint);
+    padding:7px 18px; border-radius:22px; border:2px solid var(--ink);
+  }
+  .prize.on{
+    background:var(--mustard); border-style:solid; box-shadow:7px 7px 0 var(--tomato);
+  }
+  .prize.on .st{background:var(--tomato); color:#fff}
+
+  footer{text-align:center; margin-top:32px; font-family:var(--mono);
+    font-size:10.5px; color:var(--faint); letter-spacing:.08em; line-height:2.3}
+  footer button{background:none; border:none; color:var(--faint); font:inherit;
+    text-decoration:underline; cursor:pointer}
+
+  #confetti{position:fixed; inset:0; pointer-events:none; z-index:99; overflow:hidden}
+  .cfp{position:absolute; width:10px; height:15px; border-radius:2px;
+    border:1.5px solid var(--ink); will-change:transform}
+  @keyframes fall{to{transform:translateY(114vh) rotate(780deg)}}
+
+  .toast{
+    position:fixed; left:50%; bottom:26px; transform:translateX(-50%) translateY(20px);
+    background:var(--ink); color:var(--cream); font-size:13px; font-weight:700;
+    padding:11px 22px; border-radius:24px; opacity:0; pointer-events:none;
+    transition:all .25s ease; z-index:120;
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
+
+  @media (max-width:520px){
+    body{padding:0 13px 62px}
+    :root{--bd:2.5px}
+    .hero{box-shadow:6px 6px 0 var(--ink)}
+    .hero-top{padding:28px 17px 24px}
+    .tk-main{padding:18px 16px 18px 27px}
+    .tk-name{font-size:23px}
+    .tk-win{margin-left:0}
+    .drawer{padding:19px 15px}
+  }
+  @media (prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important}}
+</style>
+</head>
+<body>
+<div id="confetti" aria-hidden="true"></div>
+<div class="toast" id="toast">已复制</div>
+
+<div class="wrap">
+
+  <section class="hero">
+    <div class="hero-top">
+      <div class="ribbon" id="ribbon">—</div>
+      <h1>十二件<br><em>你没干过的事</em></h1>
+      <div class="lede" id="intro"></div>
+    </div>
+    <div class="perf"><i class="l"></i><i class="r"></i></div>
+    <div class="hero-bot">
+      <div><div class="n" id="daysLeft">—<small>天</small></div><div class="k">还剩</div></div>
+      <div><div class="n"><span id="doneN">0</span><small id="totalN">/12</small></div><div class="k">已经撕了</div></div>
+    </div>
+  </section>
+
+  <p class="dates" id="dates">—</p>
+  <div class="pips" id="pips"></div>
+  <p class="pace">按现在的进度，平均每周得撕 <b id="pace">—</b> 张</p>
+
+  <section class="notes">
+    <h2>说明</h2>
+    <ul id="notesList"></ul>
+  </section>
+
+  <div class="divider"><span>十二张</span></div>
+  <div id="tickets"></div>
+
+  <section class="prize" id="prize">
+    <h2 id="prizeTitle">—</h2>
+    <p id="prizeText">—</p>
+    <div class="st" id="prizeSt">—</div>
+  </section>
+
+  <footer>
+    撕票记录只存在这台设备上 · <button id="reset">全部还原</button><br>
+    <span id="updated"></span>
+  </footer>
+</div>
+
+<script>
+/* 内容全部来自同目录的 data.json。改 JSON → push → 页面就变。
+   下面是读不到 data.json 时的兜底，别在这里维护内容。 */
+const FALLBACK = {
+  name:"朋友", startDate:"2026-09-20", updatedAt:"—",
+  intro:["生日快乐。","内容还没配好，稍等。"], rules:["—"],
+  prize:{title:"撕完之后",text:"—",lockedLabel:"还差 {n} 张",unlockedLabel:"解锁了"},
+  items:[]
+};
+
+const KEY = "ticketbook-carnival-v1";
+let DATA = FALLBACK, torn = {}, opened = {};
+
+const $ = id => document.getElementById(id);
+const pad = n => String(n).padStart(2,"0");
+const iso = d => d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+const cn  = d => (d.getMonth()+1)+" 月 "+d.getDate()+" 日";
+const dead = it => it.status === "expired" || it.status === "replaced";
+const liveCount = () => DATA.items.filter(i => !dead(i)).length;
+const esc = s => String(s==null?"":s).replace(/[&<>"]/g, c =>
+  ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]));
+
+function load(){ try{ const r = localStorage.getItem(KEY); if(r) torn = JSON.parse(r); }catch(e){} }
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(torn)); }catch(e){} }
+
+function toast(msg){
+  const t = $("toast"); t.textContent = msg; t.classList.add("show");
+  clearTimeout(t._h); t._h = setTimeout(()=>t.classList.remove("show"), 1600);
+}
+
+function renderTop(){
+  $("ribbon").textContent = DATA.name + " 的三十岁 · 90 天";
+  $("intro").innerHTML = (DATA.intro||[]).map((p,i)=>
+    `<p${i===0?' class="kick"':''}>${esc(p)}</p>`).join("");
+  $("notesList").innerHTML = (DATA.rules||[]).map(r=>`<li>${esc(r)}</li>`).join("");
+  $("updated").textContent = "内容更新于 " + (DATA.updatedAt||"—");
+
+  const start = new Date(DATA.startDate+"T00:00:00");
+  const end   = new Date(start.getTime() + 90*86400000);
+  const today = new Date(); today.setHours(0,0,0,0);
+  const left  = Math.max(0, Math.round((end-today)/86400000));
+
+  $("daysLeft").innerHTML = left + '<small>天</small>';
+  $("daysLeft").classList.toggle("hot", left <= 21);
+  $("dates").textContent = cn(start) + " 起 · " + cn(end) + " 截止";
+
+  const total = liveCount(), n = Object.keys(torn).length;
+  $("totalN").textContent = "/" + total;
+  $("doneN").textContent = n;
+  const weeks = Math.max(left/7, .5);
+  $("pace").textContent = (total-n) <= 0 ? "0" : ((total-n)/weeks).toFixed(1);
+
+  const pips = $("pips"); pips.innerHTML = "";
+  DATA.items.forEach((it,i)=>{
+    const d = document.createElement("i");
+    d.className = "pip" + (dead(it) ? " dead" : torn[i] ? " on" : "");
+    d.style.setProperty("--c", it.color || "#FF6B4A");
+    pips.appendChild(d);
+  });
+
+  const p = $("prize"), pz = DATA.prize||{};
+  $("prizeTitle").textContent = pz.title || "";
+  $("prizeText").textContent = pz.text || "";
+  if(total > 0 && n >= total){
+    p.classList.add("on"); $("prizeSt").textContent = pz.unlockedLabel || "解锁了";
+  }else{
+    p.classList.remove("on");
+    $("prizeSt").textContent = (pz.lockedLabel||"还差 {n} 张").replace("{n}", total-n);
+  }
+}
+
+function qrBlock(it, i){
+  const code = it.code ? `
+    <div class="code-row">
+      <span class="code">${esc(it.code)}</span>
+      <button class="btn btn-ghost" data-copy="${esc(it.code)}">复制</button>
+    </div>` : "";
+  const img = it.qr
+    ? `<img src="${esc(it.qr)}" alt="${esc(it.name)}的券码"
+            onerror="this.outerHTML='<div class=&quot;qr-missing&quot;>二维码还没放<br>把截图存成 ${esc(it.qr)}</div>'">`
+    : `<div class="qr-missing">这张没有二维码<br>到店报下面的券码</div>`;
+  const tips = (it.tips&&it.tips.length) ? `
+    <div class="tips">
+      <h4>去之前看一眼</h4>
+      <ul>${it.tips.map(t=>`<li>${esc(t)}</li>`).join("")}</ul>
+    </div>` : "";
+  return `
+    <div class="drawer">
+      <div class="qr-card">
+        ${img}
+        ${code}
+        <p class="hint">到店把这个给店员扫 · 屏幕调亮一点</p>
+      </div>
+      ${tips}
+    </div>`;
+}
+
+function renderTickets(){
+  const box = $("tickets"); box.innerHTML = "";
+  DATA.items.forEach((it,i)=>{
+    const isDead = dead(it), isTorn = torn[i];
+    const el = document.createElement("article");
+    el.className = "tk" + (isTorn ? " torn" : "") + (isDead ? " void" : "") + (opened[i] ? " open" : "");
+    el.style.setProperty("--c", it.color || "#FF6B4A");
+    el.innerHTML = `
+      <div class="tk-main">
+        <div class="tk-head">
+          <span class="tk-no">NO.${pad(i+1)}</span>
+          <span class="tk-win">${esc(it.window||"")}</span>
+        </div>
+        <h3 class="tk-name">${esc(it.name)}</h3>
+        ${isDead
+          ? `<div class="void-note">${esc(it.note||"")}</div>`
+          : `<p class="tk-why">${esc(it.why||"")}</p>
+             <div class="tk-info">
+               <div><b>店名</b>${esc(it.venue||"—")}</div>
+               ${it.addr ? `<div><b>地址</b>${esc(it.addr)}</div>` : ""}
+               <div><b>怎么约</b>${esc(it.book||"—")}</div>
+             </div>
+             <div class="tk-acts">
+               ${isTorn
+                 ? `<span class="stamp">${isTorn.replace(/-/g,".")} 撕了</span>
+                    <button class="btn btn-ghost" data-undo="${i}">撤销</button>`
+                 : `<button class="btn btn-qr" data-qr="${i}">${opened[i]?"收起券码":"出示券码"}</button>
+                    <button class="btn btn-tear" data-tear="${i}">撕了它</button>`}
+             </div>`}
+      </div>
+      ${(!isDead && !isTorn) ? qrBlock(it, i) : ""}`;
+    box.appendChild(el);
+  });
+
+  box.querySelectorAll("[data-qr]").forEach(b=> b.onclick = ()=>{
+    const i = b.dataset.qr;
+    opened[i] = !opened[i];
+    const card = b.closest(".tk");
+    card.classList.toggle("open", !!opened[i]);
+    b.textContent = opened[i] ? "收起券码" : "出示券码";
+    if(opened[i]) setTimeout(()=>card.scrollIntoView({block:"nearest",behavior:"smooth"}), 120);
+  });
+  box.querySelectorAll("[data-tear]").forEach(b=> b.onclick = ()=>{
+    torn[b.dataset.tear] = iso(new Date()); delete opened[b.dataset.tear];
+    save(); paint();
+    if(Object.keys(torn).length >= liveCount()) party();
+  });
+  box.querySelectorAll("[data-undo]").forEach(b=> b.onclick = ()=>{
+    delete torn[b.dataset.undo]; save(); paint();
+  });
+  box.querySelectorAll("[data-copy]").forEach(b=> b.onclick = async ()=>{
+    try{ await navigator.clipboard.writeText(b.dataset.copy); toast("券码已复制"); }
+    catch(e){ toast("复制不了，手动记一下"); }
+  });
+}
+
+function party(){
+  if(window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const box = $("confetti");
+  const cols = DATA.items.map(i=>i.color).filter(Boolean).concat(["#FFD23F","#FF6B4A","#1B9E77"]);
+  for(let i=0;i<110;i++){
+    const p = document.createElement("i");
+    p.className = "cfp";
+    p.style.background = cols[i % cols.length];
+    p.style.left = Math.random()*100 + "vw";
+    p.style.top = (-14 - Math.random()*26) + "vh";
+    p.style.animation = `fall ${2.3+Math.random()*2.2}s cubic-bezier(.3,.5,.6,1) ${Math.random()*.8}s forwards`;
+    box.appendChild(p);
+  }
+  setTimeout(()=>{ box.innerHTML = ""; }, 6200);
+}
+
+function paint(){ renderTop(); renderTickets(); }
+
+$("reset").onclick = ()=>{ if(confirm("把十二张票全部还原？")){ torn = {}; save(); paint(); } };
+
+(async function(){
+  load();
+  try{
+    const r = await fetch("./data.json", {cache:"no-cache"});
+    if(r.ok) DATA = await r.json();
+  }catch(e){}
+  paint();
+})();
+</script>
+</body>
+</html>
