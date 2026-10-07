@@ -29,10 +29,32 @@ insert into public.progress (id, torn) values ('henry', '{}'::jsonb)
   on conflict (id) do nothing;
 
 
--- ── 以后你想看他撕到第几张，跑这个 ──────────────────
+-- torn 的结构（每张票各自带一个修改时间，毫秒）：
+--   { "0": {"torn": "2026-10-08", "at": 1760...},   撕了
+--     "3": {"torn": null,         "at": 1761...} }  还原过
+-- 合并时同一张票比 at，晚的赢。所以你在这里改，他手机下次打开会接受。
+
+
+-- ── 看他撕到第几张 ────────────────────────────────
 -- select
---   id,
---   jsonb_object_keys(torn) as 第几张,
---   torn,
---   updated_at at time zone 'Asia/Shanghai' as 最后更新
--- from public.progress where id = 'henry';
+--   (k::int) + 1                                   as 第几张,
+--   v ->> 'torn'                                   as 撕票日期,
+--   to_timestamp(((v ->> 'at')::bigint) / 1000)
+--     at time zone 'Asia/Shanghai'                 as 改动时间
+-- from public.progress, jsonb_each(torn) as e(k, v)
+-- where id = 'henry' and v ->> 'torn' is not null
+-- order by 1;
+
+
+-- ── 远程把某一张改回未撕（把 '0' 换成票的序号减一）────
+-- update public.progress
+-- set torn = torn || jsonb_build_object(
+--       '0', jsonb_build_object('torn', null,
+--            'at', (extract(epoch from now()) * 1000)::bigint)),
+--     updated_at = now()
+-- where id = 'henry';
+
+
+-- ── 全部清空（交付前跑一次，把测试数据扫干净）──────────
+-- update public.progress set torn = '{}'::jsonb, updated_at = now()
+-- where id = 'henry';

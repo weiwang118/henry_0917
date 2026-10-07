@@ -345,15 +345,51 @@ const SYNC = {
   who:  "henry"        // 这本票册的 id，不用改
 };
 
-function load(){ try{ const r = localStorage.getItem(KEY); if(r) torn = JSON.parse(r); }catch(e){} }
+/* ── 进度的存储格式 ─────────────────────────────────
+   { "0": { torn: "2026-10-08", at: 1759... },     撕了
+     "3": { torn: null,         at: 1760... } }    撤销过（墓碑）
+
+   每张票各自带一个修改时间 at。合并时同一张票比 at，晚的赢。
+   所以撤销 / 还原能跨设备生效，你也能直接在 Supabase 后台改他的进度。 */
+
+const nowMs = () => Date.now();
+
+/* 兼容九月那版的旧格式 { "0": "2026-09-17" }：
+   转成新结构并把 at 设为 0，任何后来的修改都能覆盖它。 */
+function upgrade(raw){
+  const out = {};
+  if(!raw || typeof raw !== "object") return out;
+  for(const k in raw){
+    const v = raw[k];
+    if(v && typeof v === "object" && ("torn" in v))
+      out[k] = { torn: v.torn || null, at: Number(v.at) || 0 };
+    else if(typeof v === "string")
+      out[k] = { torn: v, at: 0 };
+  }
+  return out;
+}
+
+const sig = o => JSON.stringify(Object.keys(o||{}).sort()
+  .map(k => [k, o[k] && o[k].torn, (o[k] && o[k].at) || 0]));
+const tornOn   = i => (torn[i] && torn[i].torn) || null;
+const tornCount = () => Object.keys(torn).filter(k => torn[k] && torn[k].torn).length;
+function setTorn(i, date){ torn[i] = { torn: date, at: nowMs() }; }
+
+function load(){
+  try{ const r = localStorage.getItem(KEY); if(r) torn = upgrade(JSON.parse(r)); }catch(e){}
+}
 function save(){ try{ localStorage.setItem(KEY, JSON.stringify(torn)); }catch(e){} }
 
-/* 合并而不是覆盖：两边撕过的取并集，同一张票日期取较早的那个。
-   这样离线撕的票联网后会合上去，点到旧链接也不会让进度倒退。 */
+/* 逐张票取「最后修改时间较晚」的那条。
+   撕票、撤销、还原都带时间戳，所以三者都能正确跨设备传播；
+   离线撕的票也不会被旧记录盖掉，因为它的 at 更新。 */
 function merge(a, b){
-  const out = Object.assign({}, a);
-  for(const k in b){
-    if(!out[k] || b[k] < out[k]) out[k] = b[k];
+  const out = {};
+  for(const k of new Set([...Object.keys(a||{}), ...Object.keys(b||{})])){
+    const x = (a||{})[k], y = (b||{})[k];
+    if(!x){ out[k] = y; continue; }
+    if(!y){ out[k] = x; continue; }
+    out[k] = (Number(y.at)||0) > (Number(x.at)||0) ? y : x;
   }
   return out;
 }
@@ -375,7 +411,7 @@ async function pull(){
     { headers: headers(), cache: "no-store" });
   if(!r.ok) throw new Error("pull " + r.status);
   const rows = await r.json();
-  return (rows[0] && rows[0].torn) || {};
+  return upgrade((rows[0] && rows[0].torn) || {});
 }
 
 async function push(){
@@ -427,7 +463,7 @@ function renderTop(){
   $("daysLeft").classList.toggle("hot", left <= 21);
   $("dates").textContent = cn(start) + " 起 · " + cn(end) + " 截止";
 
-  const total = liveCount(), n = Object.keys(torn).length;
+  const total = liveCount(), n = tornCount();
   $("totalN").textContent = "/" + total;
   $("doneN").textContent = n;
   const weeks = Math.max(left/7, .5);
@@ -436,7 +472,7 @@ function renderTop(){
   const pips = $("pips"); pips.innerHTML = "";
   DATA.items.forEach((it,i)=>{
     const d = document.createElement("i");
-    d.className = "pip" + (dead(it) ? " dead" : torn[i] ? " on" : "");
+    d.className = "pip" + (dead(it) ? " dead" : tornOn(i) ? " on" : "");
     d.style.setProperty("--c", it.color || "#FF6B4A");
     pips.appendChild(d);
   });
@@ -481,7 +517,7 @@ function qrBlock(it, i){
 function renderTickets(){
   const box = $("tickets"); box.innerHTML = "";
   DATA.items.forEach((it,i)=>{
-    const isDead = dead(it), isTorn = torn[i];
+    const isDead = dead(it), isTorn = tornOn(i);
     const el = document.createElement("article");
     el.className = "tk" + (isTorn ? " torn" : "") + (isDead ? " void" : "") + (opened[i] ? " open" : "");
     el.style.setProperty("--c", it.color || "#FF6B4A");
@@ -521,12 +557,12 @@ function renderTickets(){
     if(opened[i]) setTimeout(()=>card.scrollIntoView({block:"nearest",behavior:"smooth"}), 120);
   });
   box.querySelectorAll("[data-tear]").forEach(b=> b.onclick = ()=>{
-    torn[b.dataset.tear] = iso(new Date()); delete opened[b.dataset.tear];
+    setTorn(b.dataset.tear, iso(new Date())); delete opened[b.dataset.tear];
     commit();
-    if(Object.keys(torn).length >= liveCount()) party();
+    if(tornCount() >= liveCount()) party();
   });
   box.querySelectorAll("[data-undo]").forEach(b=> b.onclick = ()=>{
-    delete torn[b.dataset.undo]; commit();
+    setTorn(b.dataset.undo, null); commit();
   });
   box.querySelectorAll("[data-copy]").forEach(b=> b.onclick = async ()=>{
     try{ await navigator.clipboard.writeText(b.dataset.copy); toast("券码已复制"); }
@@ -552,7 +588,14 @@ function party(){
 
 function paint(){ renderTop(); renderTickets(); }
 
-$("reset").onclick = ()=>{ if(confirm("把十二张票全部还原？")){ torn = {}; commit(); } };
+/* 还原要写墓碑，不能直接清空：清空没有时间戳，
+   云端和其他设备上的旧记录会在下次合并时又长回来。 */
+$("reset").onclick = ()=>{
+  if(!confirm("把十二张票全部还原？其他设备下次打开也会跟着还原。")) return;
+  for(const k in torn) setTorn(k, null);
+  DATA.items.forEach((it,i)=>{ if(!dead(it)) setTorn(i, null); });
+  commit();
+};
 
 function fatal(msg){
   $("tickets").innerHTML = `<article class="tk" style="--c:#D6362E">
@@ -586,12 +629,13 @@ function fatal(msg){
   try{
     const remote = await pull();
     const merged = merge(torn, remote || {});
-    const changed = JSON.stringify(merged) !== JSON.stringify(torn);
+    const changed = sig(merged) !== sig(torn);
+    const needPush = sig(merged) !== sig(remote || {});
     torn = merged;
     save();
     if(changed) paint();
     // 本机有云端没有的记录，补推上去
-    if(JSON.stringify(merged) !== JSON.stringify(remote || {})) await push();
+    if(needPush) await push();
     setSync("已同步");
   }catch(e){
     setSync("没连上云端，用的是本机记录");
