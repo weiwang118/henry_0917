@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>三十岁 · 重新开始</title>
 <meta name="theme-color" content="#FF6B4A">
+<link rel="manifest" href="./manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="十二印">
 <style>
   :root{
     --ink:#2B1C12;
@@ -305,7 +309,7 @@
   </section>
 
   <footer>
-    撕票记录只存在这台设备上 · <button id="reset">全部还原</button><br>
+    <span id="syncState">·</span> · <button id="reset">全部还原</button><br>
     <span id="updated"></span>
   </footer>
 </div>
@@ -332,8 +336,75 @@ const liveCount = () => DATA.items.filter(i => !dead(i)).length;
 const esc = s => String(s==null?"":s).replace(/[&<>"]/g, c =>
   ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]));
 
+/* ───────── 云端同步配置 ─────────
+   在 Supabase 建好表之后，把下面两个值填上。
+   留空 = 只用本机存储，页面照常工作，只是不同步。 */
+const SYNC = {
+  url:  "",            // 例：https://abcdefgh.supabase.co
+  key:  "",            // Project API keys 里的 anon public key
+  who:  "henry"        // 这本票册的 id，不用改
+};
+
 function load(){ try{ const r = localStorage.getItem(KEY); if(r) torn = JSON.parse(r); }catch(e){} }
 function save(){ try{ localStorage.setItem(KEY, JSON.stringify(torn)); }catch(e){} }
+
+/* 合并而不是覆盖：两边撕过的取并集，同一张票日期取较早的那个。
+   这样离线撕的票联网后会合上去，点到旧链接也不会让进度倒退。 */
+function merge(a, b){
+  const out = Object.assign({}, a);
+  for(const k in b){
+    if(!out[k] || b[k] < out[k]) out[k] = b[k];
+  }
+  return out;
+}
+
+const syncOn = () => !!(SYNC.url && SYNC.key);
+let pushTimer = null, dirty = false;
+
+function setSync(text){ const el = $("syncState"); if(el) el.textContent = text; }
+
+function headers(){
+  return { "apikey": SYNC.key, "Authorization": "Bearer " + SYNC.key,
+           "Content-Type": "application/json" };
+}
+
+async function pull(){
+  if(!syncOn()) return null;
+  const r = await fetch(
+    `${SYNC.url}/rest/v1/progress?id=eq.${encodeURIComponent(SYNC.who)}&select=torn`,
+    { headers: headers(), cache: "no-store" });
+  if(!r.ok) throw new Error("pull " + r.status);
+  const rows = await r.json();
+  return (rows[0] && rows[0].torn) || {};
+}
+
+async function push(){
+  if(!syncOn()) return;
+  const r = await fetch(`${SYNC.url}/rest/v1/progress`, {
+    method: "POST",
+    headers: Object.assign(headers(), { "Prefer": "resolution=merge-duplicates" }),
+    body: JSON.stringify({ id: SYNC.who, torn: torn, updated_at: new Date().toISOString() })
+  });
+  if(!r.ok) throw new Error("push " + r.status);
+}
+
+/* 撕票 / 撤销 / 还原都走这里：先存本地立刻出效果，再悄悄推云端 */
+function commit(){
+  save(); paint();
+  if(!syncOn()){ setSync("记录存在这台设备上"); return; }
+  dirty = true;
+  setSync("保存中…");
+  clearTimeout(pushTimer);
+  pushTimer = setTimeout(async ()=>{
+    try{ await push(); dirty = false; setSync("已同步"); }
+    catch(e){ setSync("暂时没连上，下次打开会补传"); }
+  }, 600);
+}
+
+/* 回到页面时，如果上次没推成功就补一次 */
+document.addEventListener("visibilitychange", ()=>{
+  if(document.visibilityState === "visible" && dirty) commit();
+});
 
 function toast(msg){
   const t = $("toast"); t.textContent = msg; t.classList.add("show");
@@ -451,11 +522,11 @@ function renderTickets(){
   });
   box.querySelectorAll("[data-tear]").forEach(b=> b.onclick = ()=>{
     torn[b.dataset.tear] = iso(new Date()); delete opened[b.dataset.tear];
-    save(); paint();
+    commit();
     if(Object.keys(torn).length >= liveCount()) party();
   });
   box.querySelectorAll("[data-undo]").forEach(b=> b.onclick = ()=>{
-    delete torn[b.dataset.undo]; save(); paint();
+    delete torn[b.dataset.undo]; commit();
   });
   box.querySelectorAll("[data-copy]").forEach(b=> b.onclick = async ()=>{
     try{ await navigator.clipboard.writeText(b.dataset.copy); toast("券码已复制"); }
@@ -481,15 +552,50 @@ function party(){
 
 function paint(){ renderTop(); renderTickets(); }
 
-$("reset").onclick = ()=>{ if(confirm("把十二张票全部还原？")){ torn = {}; save(); paint(); } };
+$("reset").onclick = ()=>{ if(confirm("把十二张票全部还原？")){ torn = {}; commit(); } };
+
+function fatal(msg){
+  $("tickets").innerHTML = `<article class="tk" style="--c:#D6362E">
+    <div class="tk-main">
+      <div class="tk-head"><span class="tk-no">出错了</span></div>
+      <h3 class="tk-name">data.json 没读进来</h3>
+      <p class="tk-why">${esc(msg)}</p>
+      <div class="tk-info">
+        <div><b>多半是</b>JSON 语法错误：多余的逗号、中文引号、少了括号</div>
+        <div><b>怎么查</b>把 data.json 全文贴到 jsonlint.com，它会指出第几行</div>
+      </div>
+    </div></article>`;
+}
 
 (async function(){
   load();
+
   try{
     const r = await fetch("./data.json", {cache:"no-cache"});
-    if(r.ok) DATA = await r.json();
-  }catch(e){}
-  paint();
+    if(!r.ok) throw new Error("HTTP " + r.status + " — 文件没找到，检查它是不是跟 index.html 同一层");
+    DATA = await r.json();
+  }catch(e){
+    paint(); fatal(e.message || String(e)); return;
+  }
+
+  paint();   // 先用本机进度渲染，不等网络
+
+  if(!syncOn()){ setSync("记录存在这台设备上"); return; }
+
+  setSync("同步中…");
+  try{
+    const remote = await pull();
+    const merged = merge(torn, remote || {});
+    const changed = JSON.stringify(merged) !== JSON.stringify(torn);
+    torn = merged;
+    save();
+    if(changed) paint();
+    // 本机有云端没有的记录，补推上去
+    if(JSON.stringify(merged) !== JSON.stringify(remote || {})) await push();
+    setSync("已同步");
+  }catch(e){
+    setSync("没连上云端，用的是本机记录");
+  }
 })();
 </script>
 </body>

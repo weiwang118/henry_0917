@@ -1,0 +1,15 @@
+{
+  "name": "十二印 · 三十岁挑战",
+  "short_name": "十二印",
+  "description": "十二件没干过的事，九十天。",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FFF3DC",
+  "theme_color": "#FF6B4A",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
